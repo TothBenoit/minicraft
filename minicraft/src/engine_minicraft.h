@@ -7,35 +7,34 @@
 #include "world.h"
 
 class MEngineMinicraft : public YEngine {
+	YFbo* Fbo;
+
 	GLuint ShaderWorld = 0;
 	GLuint ShaderCube = 0;
 	GLuint ShaderSun = 0;
-	YVbo* VboCube;
-	MAvatar* avatar;
-
-	float  timeOffset = 0;
+	GLuint ShaderPostProcess = 0;
 
 	MWorld* World;
+	YVbo* VboCube;
+
+	MAvatar* avatar;
+
+	YTexFile* atlas;
+
+	float  timeOffset = 0;
+	YColor SunColor = YColor(1, 1, 0.5, 1);
+	float exposure;
+	bool night;
+	YColor skyColor;
 
 	int lastMouseX = 0;
 	int lastMouseY = 0;
 	int currentMouseX = 0;
 	int currentMouseY = 0;
 
-	bool forwardPressed = false;
-	bool leftPressed = false;
-	bool rightPressed = false;
-	bool backwardPressed = false;
-	bool ctrlPressed = false;
 	bool rightClickPressed = false;
-	bool middleMousePressed = false;
 
-	YVec3f wantedMoveCameraSpace;
-	YVec3f wantedMoveWorldSpace;
-
-	float speed = 0.5f;
 	float speedRotation = 0.001f;
-	float scrollSpeed = 35.f;
 
 public:
 	//Gestion singleton
@@ -52,6 +51,7 @@ public:
 		ShaderSun = Renderer->createProgram("shaders/sun");
 		ShaderCube = Renderer->createProgram("shaders/cube");
 		ShaderWorld = Renderer->createProgram("shaders/world");
+		ShaderPostProcess = Renderer->createProgram("shaders/postprocess");
 
 	}
 
@@ -229,6 +229,9 @@ public:
 		Renderer->Camera->setPosition(YVec3f(200, 200, 200));
 		Renderer->Camera->setLookAt(YVec3f());
 
+		Fbo = new YFbo(1);
+		Fbo->init(Renderer->ScreenWidth, Renderer->ScreenHeight);
+
 		//Creation du VBO
 		VboCube = new YVbo(3, 36, YVbo::PACK_BY_ELEMENT_TYPE);
 
@@ -253,6 +256,8 @@ public:
 		VboCube->deleteVboCpu();
 
 		avatar = new MAvatar(Renderer->Camera, World);
+
+		atlas = YTexManager::getInstance()->loadTexture("textures\\atlas.png");
 	}
 
 	void update(float elapsed)
@@ -265,54 +270,45 @@ public:
 		lastMouseX = currentMouseX;
 		lastMouseY = currentMouseY;
 
-		//wantedMoveWorldSpace.X = 0;
-		//wantedMoveWorldSpace.Y = 0;
-		//wantedMoveWorldSpace.Z = 0;
-
-		//YVec3f rightDir = Renderer->Camera->RightVec;
-		//YVec3f forwardDir = Renderer->Camera->Direction;
-
-		//if (forwardPressed)
-		//{
-		//	wantedMoveWorldSpace += forwardDir * speed * elapsed;
-		//}
-		//if (backwardPressed)
-		//{
-		//	wantedMoveWorldSpace -= forwardDir * speed * elapsed;
-		//}
-		//if (leftPressed)
-		//{
-		//	wantedMoveWorldSpace -= rightDir * speed * elapsed;
-		//}
-		//if (rightPressed)
-		//{
-		//	wantedMoveWorldSpace += rightDir * speed * elapsed;
-		//}
 		if (rightClickPressed)
 		{
-			if (ctrlPressed)
-			{
-				Renderer->Camera->rotateAround(deltaMouseX * speedRotation );
-				Renderer->Camera->rotateUpAround(deltaMouseY * speedRotation );
-			}
-			else
-			{
-				Renderer->Camera->rotate(deltaMouseX * speedRotation );
-				Renderer->Camera->rotateUp(deltaMouseY * speedRotation );
-			}
+			Renderer->Camera->rotate(deltaMouseX * speedRotation );
+			Renderer->Camera->rotateUp(deltaMouseY * speedRotation );
 		}
-		/*if (middleMousePressed)
-		{
-			YVec3f scrollDir = -rightDir * deltaMouseX + forwardDir * deltaMouseY;
-			scrollDir.Z = 0;
-			Renderer->Camera->move(scrollDir * scrollSpeed * elapsed);
-		}*/
-		//Renderer->Camera->move(wantedMoveWorldSpace);
 
+	}
+
+	void CalculateSkyColor(float minuteTime)
+	{
+		YColor fullDayColor(0.0f, 181.f / 255.f, 221.f / 255.f, 1.0f);
+		YColor dawnColor(0.9f, 0.4f, 0.f, 1.f);
+		YColor nightColor(0.2f, 0.2f, 0.45f, 1.f);
+		float mnLever = 6 * 50;
+		float mnCoucher = 19 * 60;
+
+		float dTime = minuteTime;
+		dTime -= mnLever;
+		dTime /= (mnCoucher - mnLever);
+		dTime *= (float)M_PI;
+
+
+		if ((night = minuteTime < mnLever || minuteTime > mnCoucher))
+		{
+			skyColor = dawnColor.interpolate(nightColor, abs(2 * sin(dTime)));
+			Renderer->setBackgroundColor(skyColor);
+			exposure = 0;
+		}
+		else
+		{
+			skyColor = fullDayColor.interpolate(dawnColor, abs(cos(dTime)));
+			Renderer->setBackgroundColor(skyColor);
+			exposure = 1- 0.6*(abs(cos(dTime)));
+		}
 	}
 
 	void renderObjects()
 	{
+		Fbo->setAsOutFBO(true);
 		glUseProgram(0);
 		//Rendu des axes
 		glDisable(GL_LIGHTING);
@@ -337,39 +333,16 @@ public:
 		while (minuteTime > 24 * 60)
 			minuteTime -= 24 * 60;
 
-		YColor fullDayColor(0.0f, 181.f / 255.f, 221.f / 255.f, 1.0f);
-		YColor dawnColor(0.9f, 0.4f, 0.f, 1.f);
-		YColor nightColor(0.2f, 0.2f, 0.45f, 1.f);
-		float mnLever = 6 * 50;
-		float mnCoucher = 19 * 60;
-
-		float dTime = minuteTime;
-		dTime -= mnLever;
-		dTime /= (mnCoucher - mnLever);
-		dTime *= (float)M_PI;
-
-		float ambientValue = 1;
-		YColor skyColor;
-		if (minuteTime < mnLever || minuteTime > mnCoucher)
-		{
-			skyColor = dawnColor.interpolate(nightColor, abs(2 * sin(dTime)));
-			Renderer->setBackgroundColor(skyColor);
-			ambientValue = 0.2f;
-		}
-		else
-		{
-			skyColor = fullDayColor.interpolate(dawnColor, abs(cos(dTime)));
-			Renderer->setBackgroundColor(skyColor);
-			ambientValue = 1 + (0.2f - 1) * abs(cos(dTime)); //lerp
-		}
+		CalculateSkyColor(minuteTime);
+	
 		YVec3f SunPos = YVec3f(MWorld::MAT_SIZE_METERS / 2, MWorld::MAT_SIZE_METERS / 2, -MWorld::MAT_HEIGHT_METERS * 2);
 		SunPos.rotate(YVec3f(1,0,0), (minuteTime / (60 * 24)) * 2 * M_PI);
 
 		glPushMatrix();
 		glUseProgram(ShaderSun); //Demande au GPU de charger ces shaders
 		GLuint var = glGetUniformLocation(ShaderSun, "sun_color");
-		YColor SunColor(1, 1, 0.5, 1);
 		glUniform3f(var, SunColor.R, SunColor.V, SunColor.B);
+
 		YVec3f RenderSunPos = SunPos + avatar->Position;
 		glTranslatef(RenderSunPos.X, RenderSunPos.Y, RenderSunPos.Z);
 		glScalef(10, 10, 10);
@@ -381,22 +354,22 @@ public:
 		glUseProgram(ShaderWorld);
 		Renderer->sendTimeToShader(DeltaTimeCumul, ShaderWorld);
 
-		var = glGetUniformLocation(ShaderWorld, "ambientColor");
-		YColor ambientColor;
-		skyColor.toHSV(&ambientColor.R, &ambientColor.V, &ambientColor.B,&ambientColor.A);
-		ambientColor.V /= 2;
-		ambientColor.B *= 2;
-		ambientColor.fromHSV(ambientColor.R, ambientColor.V, ambientColor.B, ambientColor.A);
-		glUniform3f(var, ambientColor.R, ambientColor.V, ambientColor.B);
+		var = glGetUniformLocation(ShaderWorld, "skyColor");
+		glUniform3f(var, skyColor.R, skyColor.V, skyColor.B);
 
 		var = glGetUniformLocation(ShaderWorld, "sunPos");
 		glUniform3f(var, SunPos.X, SunPos.Y, SunPos.Z);
+
+		var = glGetUniformLocation(ShaderWorld, "night");
+		glUniform1f(var, night);
 
 		var = glGetUniformLocation(ShaderWorld, "camPos");
 		glUniform3f(var, Renderer->Camera->Position.X, Renderer->Camera->Position.Y, Renderer->Camera->Position.Z);
 
 		var = glGetUniformLocation(ShaderWorld, "specularColor");
 		glUniform3f(var, SunColor.R, SunColor.V, SunColor.B);
+
+		atlas->setAsShaderInput(ShaderWorld, GL_TEXTURE0, "atlas");
 
 #if _DEBUG
 		World->render_world_vbo(true, true, ShaderWorld);
@@ -406,12 +379,30 @@ public:
 		//World->render_world_basic(ShaderCube, VboCube);
 #endif
 
+		Fbo->setAsOutFBO(false);
 
+		glUseProgram(ShaderPostProcess);
 
+		var = glGetUniformLocation(ShaderPostProcess, "sunPos");
+		glUniform3f(var, RenderSunPos.X, RenderSunPos.Y, RenderSunPos.Z);
+
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+
+		Fbo->setColorAsShaderInput(0, GL_TEXTURE0, "TexColor");
+		Fbo->setDepthAsShaderInput(GL_TEXTURE1, "TexDepth");
+
+		var = glGetUniformLocation(ShaderPostProcess, "exposure");
+
+		glUniform1f(var,exposure);
+
+		Renderer->sendMatricesToShader(ShaderPostProcess); //Envoie les matrices au shader
+		Renderer->sendNearFarToShader(ShaderPostProcess);
+		Renderer->drawFullScreenQuad();
 	}
 
 	void resize(int width, int height) {
-
+		Fbo->resize(width, height);
 	}
 
 	/*INPUTS*/
@@ -432,29 +423,22 @@ public:
 			break;
 		case 'Z':
 		case 'z':
-			//forwardPressed = down;
 			avatar->avance = down;
 			break;
 		case 'Q':
 		case 'q':
-			//leftPressed = down;
 			avatar->gauche = down;
 			break;
 		case 'S':
 		case 's':
-			//backwardPressed = down;
 			avatar->recule = down;
 			break;
 		case 'D':
 		case 'd':
-			//rightPressed = down;
 			avatar->droite = down;
 			break;
 		case ' ':
 			avatar->Jump = down;
-			break;
-		case GLUT_KEY_CTRL_L:
-			ctrlPressed = down;
 			break;
 		}
 
@@ -469,11 +453,6 @@ public:
 		if (button == 2)
 		{
 			rightClickPressed = state == 0;
-
-		}
-		if (button == 1)
-		{
-			middleMousePressed = state == 0;
 		}
 	}
 
@@ -482,7 +461,6 @@ public:
 		currentMouseX = x;
 		currentMouseY = y;
 	}
-
 };
 
 

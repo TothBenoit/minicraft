@@ -82,50 +82,94 @@ class MChunk
 			YVec3f normal = (b - a).cross(d - a);
 			normal.normalize();
 			YColor * color = nullptr;
+			float x;
+			float y;
+
 			chooseColor(type, color);
+			chooseUV(type, x, y);
+
+			if (normal.Z == 0 || normal.Z == -1)
+			{
+				y += 0.5f;
+			}
+
 			vbo->setElementValue(0, iVertice, a.X, a.Y, a.Z);
 			vbo->setElementValue(1, iVertice, normal.X, normal.Y, normal.Z);
-			vbo->setElementValue(2, iVertice, 0, 0);
+			vbo->setElementValue(2, iVertice, x + 1, y);
 			vbo->setElementValue(3, iVertice, color->R,color->V,color->B, color->A);
 
 			iVertice++;
 
 			vbo->setElementValue(0, iVertice, b.X, b.Y, b.Z);
 			vbo->setElementValue(1, iVertice, normal.X, normal.Y, normal.Z);
-			vbo->setElementValue(2, iVertice, 1, 0);
+			vbo->setElementValue(2, iVertice, x, y);
 			vbo->setElementValue(3, iVertice, color->R, color->V, color->B, color->A);
 
 			iVertice++;
 
 			vbo->setElementValue(0, iVertice, c.X, c.Y, c.Z);
 			vbo->setElementValue(1, iVertice, normal.X, normal.Y, normal.Z);
-			vbo->setElementValue(2, iVertice, 1, 1);
+			vbo->setElementValue(2, iVertice, x, y +0.5f);
 			vbo->setElementValue(3, iVertice, color->R, color->V, color->B, color->A);
 
 			iVertice++;
 
 			vbo->setElementValue(0, iVertice, a.X, a.Y, a.Z);
 			vbo->setElementValue(1, iVertice, normal.X, normal.Y, normal.Z);
-			vbo->setElementValue(2, iVertice, 0, 0);
+			vbo->setElementValue(2, iVertice, x + 1, y);
 			vbo->setElementValue(3, iVertice, color->R, color->V, color->B, color->A);
 
 			iVertice++;
 
 			vbo->setElementValue(0, iVertice, c.X, c.Y, c.Z);
 			vbo->setElementValue(1, iVertice, normal.X, normal.Y, normal.Z);
-			vbo->setElementValue(2, iVertice, 1, 1);
+			vbo->setElementValue(2, iVertice, x, y + 0.5f);
 			vbo->setElementValue(3, iVertice, color->R, color->V, color->B, color->A);
 
 			iVertice++;
 
 			vbo->setElementValue(0, iVertice, d.X, d.Y, d.Z);
 			vbo->setElementValue(1, iVertice, normal.X, normal.Y, normal.Z);
-			vbo->setElementValue(2, iVertice, 0, 1);
+			vbo->setElementValue(2, iVertice, x + 1, y + 0.5f);
 			vbo->setElementValue(3, iVertice, color->R, color->V, color->B, color->A);
 
 			iVertice++;
 
 			return 6;
+		}
+
+		void chooseUV(MCube::MCubeType type, float & x, float & y)
+		{
+			switch (type)
+			{
+			case MCube::CUBE_HERBE:
+				x = 0;
+				y = 0;
+				break;
+			case MCube::CUBE_TERRE:
+				x = 1;
+				y = 0;
+				//foferduvert
+				break;
+			case MCube::CUBE_PIERRE:
+				x = 3;
+				y = 0;
+				//foferduvert
+				break;
+			case MCube::CUBE_EAU:
+				x = 32;
+				y = 1;
+				//foferduvert
+				break;
+			case MCube::CUBE_LAINE_01:
+				x = 32;
+				y = 1;
+				break;
+			default:
+				x = 32;
+				y = 1;
+				break;
+			}
 		}
 
 		void chooseColor(MCube::MCubeType type, YColor * &color)

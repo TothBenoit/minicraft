@@ -32,11 +32,10 @@ void main()
 	if (vs_color_in.a == 0.8)
 	{
 		wPos.z -=1;
-		zNoise += sin(wPos.x/20+elapsed)*0.2f;
+		zNoise += sin(wPos.x/20+elapsed)*0.5f;
 		zNoise += sin((wPos.x+wPos.y)/2 + elapsed*1.7f)*0.1f;
 		zNoise += sin((wPos.x+2*wPos.y)/2 + elapsed*2.75f)*0.05f;
 		wPos.z += zNoise;
-		color_in.xyz += vec3(zNoise,zNoise,zNoise);
 	}
 
 	vec4 vPos = v * wPos; 
@@ -45,8 +44,7 @@ void main()
 		
 	normal = normalize((nmat * vec4(vs_normal_in,1.0)).xyz); 
 
-	uv = vs_uv_in;
+	uv = vs_uv_in/vec2(32,1);
 
-	//Couleur par défaut violet
-	color = vec4(color_in.xyz * max(0.1,0.4 * vs_normal_in.x + 0.85 * vs_normal_in.z + 0.2*vs_normal_in.y) ,color_in.a);
+	color = color_in;
 }

@@ -102,8 +102,9 @@ public:
 		{
 			movementForce += rightDir;
 		}
-		if (Jump && Grounded)
+		if (Jump)
 		{
+			Jump = false;
 			Grounded = false;
 			movementForce += upDir * jumpForce / elapsed;
 		}
@@ -132,6 +133,8 @@ public:
 
 		YVec3f correctDir = YVec3f(0.f, 0.f, 0.f);
 		float valueColMin = 0;
+
+		Grounded = false; //Si on touche le sol grounded sera remis à true, sinon, on tombe :)
 
 		for (int i = 0; i < 5; i++)
 		{
@@ -206,7 +209,6 @@ public:
 
 		if (!Hit) return;
 		else Hit = false;
-
 		YVec3f vecX = Cam->Direction.dot(YVec3f(1, 0, 0)) > 0 ? YVec3f(1, 0, 0) : YVec3f(-1, 0, 0);
 		YVec3f vecY = Cam->Direction.dot(YVec3f(0, 1, 0)) > 0 ? YVec3f(0, 1, 0) : YVec3f(0, -1, 0);
 		YVec3f vecZ = Cam->Direction.dot(YVec3f(0, 0, 1)) > 0?YVec3f(0,0,1):YVec3f(0,0,-1);
@@ -222,9 +224,9 @@ public:
 		int startX = max((int)(Position.X / MCube::CUBE_SIZE) - cubeDistancePickUp,0);
 		int startY = max((int)(Position.Y / MCube::CUBE_SIZE) - cubeDistancePickUp,0);
 		int startZ = max((int)(Position.Z / MCube::CUBE_SIZE) - cubeDistancePickUp,0);
-		int endX = min((int)(Position.X / MCube::CUBE_SIZE) + cubeDistancePickUp, MWorld::MAT_SIZE);
-		int endY = min((int)(Position.Y / MCube::CUBE_SIZE) + cubeDistancePickUp, MWorld::MAT_SIZE);
-		int endZ = min((int)(Position.Z / MCube::CUBE_SIZE) + cubeDistancePickUp, MWorld::MAT_HEIGHT);
+		int endX = min((int)(Position.X / MCube::CUBE_SIZE) + cubeDistancePickUp, MWorld::MAT_SIZE_CUBES);
+		int endY = min((int)(Position.Y / MCube::CUBE_SIZE) + cubeDistancePickUp, MWorld::MAT_SIZE_CUBES);
+		int endZ = min((int)(Position.Z / MCube::CUBE_SIZE) + cubeDistancePickUp, MWorld::MAT_HEIGHT_CUBES);
 
 		for (int x = startX; x < endX; x++)
 		{

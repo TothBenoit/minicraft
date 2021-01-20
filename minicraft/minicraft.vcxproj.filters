@@ -42,6 +42,9 @@
     <Filter Include="Fichiers d%27en-tête\engine\render">
       <UniqueIdentifier>{75d7c323-8b30-4ce8-97d7-f825373fcbfa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Fichiers sources\utils">
+      <UniqueIdentifier>{519f3904-6ff5-4fac-8ffa-14ced74b76e0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\engine_minicraft.h">
@@ -78,6 +81,9 @@
     </ClCompile>
     <ClCompile Include="..\src\engine\render\vbo.cpp">
       <Filter>Fichiers sources\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\engine\utils\utils.cpp">
+      <Filter>Fichiers sources\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
