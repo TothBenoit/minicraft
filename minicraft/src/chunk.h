@@ -133,7 +133,7 @@ class MChunk
 			switch (type)
 			{
 			case MCube::CUBE_HERBE:
-				color = new YColor( 40.0f / 255.0f, 255 / 255.0f, 0.0f, 1.0f);
+				color = new YColor( 51.0f / 255.0f, 145.0f / 255.0f, 19.0f/255.0f, 1.0f);
 				break;
 			case MCube::CUBE_TERRE:
 				color = new YColor(40.0f / 255.0f, 25.0f / 255.0f, 0.0f, 1.0f);

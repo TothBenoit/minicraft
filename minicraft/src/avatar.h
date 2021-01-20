@@ -219,12 +219,12 @@ public:
 
 		int cubeDistancePickUp = max((int)(pickUpDistance / MCube::CUBE_SIZE), 1);
 
-		int startX = (int)(Position.X / MCube::CUBE_SIZE) - cubeDistancePickUp;
-		int startY = (int)(Position.Y / MCube::CUBE_SIZE) - cubeDistancePickUp;
-		int startZ = (int)(Position.Z / MCube::CUBE_SIZE) - cubeDistancePickUp;
-		int endX = (int)(Position.X / MCube::CUBE_SIZE) + cubeDistancePickUp;
-		int endY = (int)(Position.Y / MCube::CUBE_SIZE) + cubeDistancePickUp;
-		int endZ = (int)(Position.Z / MCube::CUBE_SIZE) + cubeDistancePickUp;
+		int startX = max((int)(Position.X / MCube::CUBE_SIZE) - cubeDistancePickUp,0);
+		int startY = max((int)(Position.Y / MCube::CUBE_SIZE) - cubeDistancePickUp,0);
+		int startZ = max((int)(Position.Z / MCube::CUBE_SIZE) - cubeDistancePickUp,0);
+		int endX = min((int)(Position.X / MCube::CUBE_SIZE) + cubeDistancePickUp, MWorld::MAT_SIZE);
+		int endY = min((int)(Position.Y / MCube::CUBE_SIZE) + cubeDistancePickUp, MWorld::MAT_SIZE);
+		int endZ = min((int)(Position.Z / MCube::CUBE_SIZE) + cubeDistancePickUp, MWorld::MAT_HEIGHT);
 
 		for (int x = startX; x < endX; x++)
 		{

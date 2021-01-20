@@ -49,6 +49,9 @@ public:
 	/*HANDLERS GENERAUX*/
 	void loadShaders()
 	{
+		ShaderSun = Renderer->createProgram("shaders/sun");
+		ShaderCube = Renderer->createProgram("shaders/cube");
+		ShaderWorld = Renderer->createProgram("shaders/world");
 
 	}
 
@@ -249,10 +252,6 @@ public:
 		//On relache la mémoire CPU
 		VboCube->deleteVboCpu();
 
-		ShaderSun = Renderer->createProgram("shaders/sun");
-		ShaderCube = Renderer->createProgram("shaders/cube");
-		ShaderWorld = Renderer->createProgram("shaders/world");
-
 		avatar = new MAvatar(Renderer->Camera, World);
 	}
 
@@ -350,24 +349,30 @@ public:
 		dTime *= (float)M_PI;
 
 		float ambientValue = 1;
+		YColor skyColor;
 		if (minuteTime < mnLever || minuteTime > mnCoucher)
 		{
-			Renderer->setBackgroundColor(dawnColor.interpolate(nightColor, abs(2*sin(dTime))));
+			skyColor = dawnColor.interpolate(nightColor, abs(2 * sin(dTime)));
+			Renderer->setBackgroundColor(skyColor);
 			ambientValue = 0.2f;
 		}
 		else
 		{
-			Renderer->setBackgroundColor(fullDayColor.interpolate(dawnColor, abs(cos(dTime))));
+			skyColor = fullDayColor.interpolate(dawnColor, abs(cos(dTime)));
+			Renderer->setBackgroundColor(skyColor);
 			ambientValue = 1 + (0.2f - 1) * abs(cos(dTime)); //lerp
 		}
+		YVec3f SunPos = YVec3f(MWorld::MAT_SIZE_METERS / 2, MWorld::MAT_SIZE_METERS / 2, -MWorld::MAT_HEIGHT_METERS * 2);
+		SunPos.rotate(YVec3f(1,0,0), (minuteTime / (60 * 24)) * 2 * M_PI);
 
 		glPushMatrix();
 		glUseProgram(ShaderSun); //Demande au GPU de charger ces shaders
 		GLuint var = glGetUniformLocation(ShaderSun, "sun_color");
-		YColor SunColor(1, 1, 0, 1);
+		YColor SunColor(1, 1, 0.5, 1);
 		glUniform3f(var, SunColor.R, SunColor.V, SunColor.B);
-		glRotatef(((minuteTime) / (60 * 24)) * 360, 1, 0, 0);
-		glTranslatef(0, 0, -10);
+		YVec3f RenderSunPos = SunPos + avatar->Position;
+		glTranslatef(RenderSunPos.X, RenderSunPos.Y, RenderSunPos.Z);
+		glScalef(10, 10, 10);
 		Renderer->updateMatricesFromOgl(); //Calcule toute les matrices à partir des deux matrices OGL
 		Renderer->sendMatricesToShader(ShaderSun); //Envoie les matrices au shader
 		VboCube->render(); //Demande le rendu du VBO
@@ -375,8 +380,24 @@ public:
 
 		glUseProgram(ShaderWorld);
 		Renderer->sendTimeToShader(DeltaTimeCumul, ShaderWorld);
-		auto att = glGetUniformLocation(ShaderWorld, "att");
-		glUniform1f(att, ambientValue);
+
+		var = glGetUniformLocation(ShaderWorld, "ambientColor");
+		YColor ambientColor;
+		skyColor.toHSV(&ambientColor.R, &ambientColor.V, &ambientColor.B,&ambientColor.A);
+		ambientColor.V /= 2;
+		ambientColor.B *= 2;
+		ambientColor.fromHSV(ambientColor.R, ambientColor.V, ambientColor.B, ambientColor.A);
+		glUniform3f(var, ambientColor.R, ambientColor.V, ambientColor.B);
+
+		var = glGetUniformLocation(ShaderWorld, "sunPos");
+		glUniform3f(var, SunPos.X, SunPos.Y, SunPos.Z);
+
+		var = glGetUniformLocation(ShaderWorld, "camPos");
+		glUniform3f(var, Renderer->Camera->Position.X, Renderer->Camera->Position.Y, Renderer->Camera->Position.Z);
+
+		var = glGetUniformLocation(ShaderWorld, "specularColor");
+		glUniform3f(var, SunColor.R, SunColor.V, SunColor.B);
+
 #if _DEBUG
 		World->render_world_vbo(true, true, ShaderWorld);
 		//World->render_world_basic(ShaderCube, VboCube);
@@ -384,6 +405,8 @@ public:
 		World->render_world_vbo(false, true, ShaderWorld);
 		//World->render_world_basic(ShaderCube, VboCube);
 #endif
+
+
 
 	}
 
@@ -429,6 +452,7 @@ public:
 			break;
 		case ' ':
 			avatar->Jump = down;
+			break;
 		case GLUT_KEY_CTRL_L:
 			ctrlPressed = down;
 			break;
