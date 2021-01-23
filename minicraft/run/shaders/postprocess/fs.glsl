@@ -50,7 +50,7 @@ void main (void)
 
 	float zSun = normalize(screenLightPos).z;
 	zSun = (zSun + 1)/2;
-
+	//insuffisant quand le soleil est hors caméra
 	screenLightPos = p * screenLightPos; 
 	screenLightPos /= screenLightPos.w;
 	screenLightPos.x = clamp((screenLightPos.x + 1)/2,0,1);

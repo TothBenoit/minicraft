@@ -15,9 +15,11 @@ public:
 
 	float pickUpDistance;
 	float jumpForce;
-	float walkSpeed;
-	float runSpeed;
-	float crouchSpeed;
+	float walkAcceleration;
+	float runAcceleration;
+	float crouchAcceleration;
+	float maxSpeed;
+	float maxFallSpeed;
 	float masse;
 	float groundDamping;
 	float airDamping;
@@ -62,12 +64,14 @@ public:
 		Run = false;
 		Hit = false;
 		jumpForce = 1.f;
-		walkSpeed = 10.f;
-		runSpeed = 15.f;;
-		crouchSpeed = 5.f;
+		walkAcceleration = 10.f;
+		runAcceleration = 15.f;;
+		crouchAcceleration = 5.f;
+		maxSpeed = 20.f;
+		maxFallSpeed = 50.f;
 		masse = 1;
-		groundDamping = 0.05f;
-		airDamping = 0.9f;
+		groundDamping = 0.01f;
+		airDamping = 0.5f;
 		pickUpDistance = MCube::CUBE_SIZE*2;
 	}
 
@@ -109,9 +113,9 @@ public:
 			movementForce += upDir * jumpForce / elapsed;
 		}
 
-		float wantedSpeed = walkSpeed;
-		if (Crouch) wantedSpeed = crouchSpeed;
-		else if (Run) wantedSpeed = runSpeed;
+		float wantedSpeed = walkAcceleration;
+		if (Crouch) wantedSpeed = crouchAcceleration;
+		else if (Run) wantedSpeed = runAcceleration;
 
 		movementForce *= wantedSpeed;
 		//Sommes des forces
@@ -119,16 +123,41 @@ public:
 		acceleration += gravityForce / masse;
 		//Calcul de vitesse
 		Speed += acceleration * elapsed;
+		YVec3f horizontalSpeed(Speed.X, Speed.Y, 0);
+		if (horizontalSpeed.getSqrSize() > maxSpeed * maxSpeed)
+		{
+			float z = Speed.Z;
+			Speed = horizontalSpeed.normalize() * maxSpeed;
+			Speed.Z = z;
+		}
+		if (Speed.Z > maxFallSpeed)
+		{
+			Speed.Z = maxFallSpeed;
+		}
 		//Calcul de position
 		Position += Speed * elapsed;
+
 		//Damping
+		float damping;
 		if (Grounded)
 		{
-			Speed *= pow(groundDamping, elapsed);
+			damping = groundDamping;
 		}
 		else
 		{
-			Speed *= pow(airDamping, elapsed);
+			damping = airDamping;
+		}
+
+		float dampFactor = pow(damping, elapsed);
+		Speed.X *= dampFactor;
+		Speed.Y *= dampFactor;
+
+		// Ne marche pas bien avec un frame rate différent, essayer de trouver une équation propre.
+		if (movementForce.getSqrSize() < 0.01f)
+		{
+
+			Speed.X /= 1 + ((1 / 60.f) / elapsed) * 0.01f;
+			Speed.Y /= 1 + ((1 / 60.f) / elapsed) * 0.01f;
 		}
 
 		YVec3f correctDir = YVec3f(0.f, 0.f, 0.f);
@@ -211,7 +240,7 @@ public:
 		else Hit = false;
 		YVec3f vecX = Cam->Direction.dot(YVec3f(1, 0, 0)) > 0 ? YVec3f(1, 0, 0) : YVec3f(-1, 0, 0);
 		YVec3f vecY = Cam->Direction.dot(YVec3f(0, 1, 0)) > 0 ? YVec3f(0, 1, 0) : YVec3f(0, -1, 0);
-		YVec3f vecZ = Cam->Direction.dot(YVec3f(0, 0, 1)) > 0?YVec3f(0,0,1):YVec3f(0,0,-1);
+		YVec3f vecZ = Cam->Direction.dot(YVec3f(0, 0, 1)) > 0 ? YVec3f(0, 0, 1) : YVec3f(0, 0, -1);
 
 		float offsetX = (vecX.X > 0) ? (float)MCube::CUBE_SIZE : 0;
 		float offsetY = (vecY.Y > 0) ? (float)MCube::CUBE_SIZE : 0;

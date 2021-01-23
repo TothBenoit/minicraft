@@ -50,7 +50,7 @@ void main()
 	}
 
 	float backIllumination = 0;
-
+	//soit faire un vbo spécial pour l'eau et les nuages, soit faire passer le type
 	if(uv.x + uv.y > 1.9f)
 	{
 		texColor = color;
