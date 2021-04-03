@@ -18,15 +18,15 @@ uniform vec3 specularColor = vec3(1,1,1);
 uniform vec3 camPos;
 uniform float night;
 
-float glossiness = 0.2f;
+float glossiness = 0.05f;
 float delta = 0.2f;
 
 void Noise(inout vec3 pos)
 {
 	float zNoise;
 	pos.z -=1;
-	zNoise += sin(pos.x/20+elapsed)*0.5f;
-	zNoise += sin((pos.x+pos.y)/2 + elapsed*1.7f)*0.1f;
+	zNoise += sin(pos.x/20+elapsed)*0.75f;
+	zNoise += sin((pos.x+pos.y)/2 + elapsed*1.7f)*0.15f;
 	zNoise += sin((pos.x+2*pos.y)/2 + elapsed*2.75f)*0.05f;
 	pos.z += zNoise;
 }
@@ -35,9 +35,11 @@ void main()
 	vec3 niceNormal = normal;
 	vec4 texColor = texture(atlas, uv);
 
+	//Only water has alpha < 1
+	//We recalculate normal for water
 	if(color.a < 0.9)
 	{
-		glossiness = 20f;
+		glossiness = 2f;
 		vec3 p1 = wPosOut;
 		vec3 p2 = wPosOut + vec3(0.02,0,0);
 		vec3 p3 = wPosOut + vec3(0,0.02,0);
@@ -50,10 +52,15 @@ void main()
 	}
 
 	float backIllumination = 0;
-	//soit faire un vbo spécial pour l'eau et les nuages, soit faire passer le type
+	// si nos uv sont en dehors de la texture il s'agit d'eau ou de nuage
 	if(uv.x + uv.y > 1.9f)
 	{
 		texColor = color;
+	}
+
+	//Calculate SSS for clouds (clouds is white and the only one with r > 0.99)
+	if (color.r >0.99)
+	{
 		vec3 sunToObjDir = normalize(-sunPos);
 		vec3 camToObjDir = normalize(wPosOut-camPos);
 

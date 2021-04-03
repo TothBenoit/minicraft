@@ -211,6 +211,7 @@ public :
 			}
 		}
 		//Apply water to the level!!!!
+		//Every air cube between ground level et sea deapth is now water
 
 		for (int x = 0; x < MAT_SIZE_CUBES; x++)
 		{
@@ -462,6 +463,7 @@ public :
 		}
 	}
 
+	//this is not used when using render_world_vbo, the color is choose in chunk when we add quad to the vbo
 	void chooseColor(MCube::MCubeType type, GLuint var)
 	{
 		switch (type)
@@ -471,15 +473,12 @@ public :
 			break;
 		case MCube::CUBE_TERRE:
 			glUniform4f(var, 40.0f / 255.0f, 25.0f / 255.0f, 0.0f, 1.0f);
-			//foferduvert
 			break;
 		case MCube::CUBE_PIERRE:
 			glUniform4f(var, 60.f / 255.0f, 60.f / 255.0f, 60.f / 255.0f, 1.0f);
-			//foferduvert
 			break;
 		case MCube::CUBE_EAU :
-			glUniform4f(var, 0.f, 0.0f, 60.f / 255.0f, 1.0f);
-			//foferduvert
+			glUniform4f(var, 78.f / 255.0f, 216.f / 255.0f, 237.f / 255.0f, 1.0f);
 			break;
 		default:
 			glUniform4f(var, 1.0f, 1.0f, 1.0f, 1.0f);

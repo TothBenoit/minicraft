@@ -29,11 +29,14 @@ void main()
 
 	float zNoise = 0;
 	vec4 color_in = vs_color_in;
-	if (vs_color_in.a == 0.8)
+
+	//Only water has alpha < 1
+	//calculate waves
+	if (vs_color_in.a < 0.9)
 	{
 		wPos.z -=1;
-		zNoise += sin(wPos.x/20+elapsed)*0.5f;
-		zNoise += sin((wPos.x+wPos.y)/2 + elapsed*1.7f)*0.1f;
+		zNoise += sin(wPos.x/20+elapsed)*0.75f;
+		zNoise += sin((wPos.x+wPos.y)/2 + elapsed*1.7f)*0.15f;
 		zNoise += sin((wPos.x+2*wPos.y)/2 + elapsed*2.75f)*0.05f;
 		wPos.z += zNoise;
 	}

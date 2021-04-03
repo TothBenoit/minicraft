@@ -188,7 +188,7 @@ class MChunk
 				//foferduvert
 				break;
 			case MCube::CUBE_EAU:
-				color = new YColor(0.f, 0.0f, 60.f / 255.0f, 0.8f);
+				color = new YColor(78.f / 255.0f, 216.f / 255.0f, 237.f / 255.0f, 0.6f);
 				//foferduvert
 				break;
 			case MCube::CUBE_LAINE_01:
